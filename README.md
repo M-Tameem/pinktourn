@@ -1,9 +1,9 @@
-# Pink Noise Anti-Cheat System v2.1 - Tournament Edition
+# PinkTourn v2.2 - Tournament Audio Monitor
 
 ## Overview
 
-Monitors a USB headset playing pink noise during tournament matches. Detects any
-attempt to mute, lower, or disconnect the pink noise device. Reports tamper events
+Monitors a selected Windows audio output playing pink noise during tournament matches.
+Reports Windows-visible changes to mute, volume, playback, and device availability. Reports tamper events
 to a central dashboard in real time.
 
 ### What Changed in v2.1
@@ -40,6 +40,58 @@ to a central dashboard in real time.
 - Fixed `data-time` attributes so the secondary time-ago updater actually works.
 
 ---
+
+## Client reliability update
+
+The setup UI has been refreshed for clarity. **Check server connection** sends a
+single real heartbeat without starting audio or locking. The dashboard will mark
+that client offline after the check stops; continuous heartbeats begin when locked.
+The token field is hidden until **Server requires a token** is checked. It is an
+optional shared secret configured by the server admin, not a generated value.
+
+USB, 3.5 mm, and wireless Windows outputs may be selected. Hardware volume/mute
+controls that do not report changes to Windows cannot reliably be detected. When
+game audio shares the selected output, its endpoint volume changes affect monitoring.
+
+Optional startup arguments (also supported by the EXE):
+
+```powershell
+.\client.exe --server-url http://127.0.0.1:8765 --check-connection
+.\client.exe --check-connection
+```
+
+The first command saves the address; the second checks the restored address.
+To run the server on that alternative port:
+
+```powershell
+python -m uvicorn server:app --host 127.0.0.1 --port 8765
+```
+
+Use `0.0.0.0` instead of `127.0.0.1` when the server should listen for LAN clients.
+
+
+- Server URL, auth token, output device name, and volume survive closing or restarting.
+- Settings live at `%LOCALAPPDATA%\PinkTourn\settings.json`, independent of the EXE folder.
+  The auth token is protected with Windows DPAPI for the current Windows user.
+- Locking requires no password. The built-in unlock password is **`pink123`**
+  (`ADMIN_PASSWORD` in `client.py`). Rebuild the EXE after changing it.
+- Settings save automatically after edits, on lock, and on close; Save Settings also saves immediately.
+- A restart during a locked session restores a red interrupted-session screen, preserves
+  tamper flags, and reports `client_restarted` to the server. Audio does not silently resume:
+  an admin must unlock and lock again to revalidate playback and monitoring.
+- Missing saved devices require choosing an output; device names are matched instead of
+  reusing indices that Windows may change after restarting.
+- Lock, test, diagnostic, and unlock operations run off the UI thread. Locking requires
+  actual audio callbacks and a successful server heartbeat. Operations report a timeout
+  after 15 seconds. A native driver call that never returns requires restarting the app;
+  retries stay disabled while the call is outstanding.
+- Audio stream start/stop no longer hold the callback lock. Windows COM monitoring is
+  initialized and read on its own thread. Volume Mixer sessions are read from the
+  selected endpoint, rather than the Windows default output.
+
+Run regression checks with `python -m unittest -v test_client`. These use simulated
+streams and do not play audio. Verify the EXE with the actual tournament USB headset
+before distribution.
 
 ## Installation
 
@@ -82,12 +134,13 @@ API docs: `http://localhost:8000/docs`
 4. Click "Run Diagnostic" to verify monitoring works
 5. Enter server URL (use the server's IP if on a different machine)
 6. Enter auth token (if server requires one)
-7. Set admin password
+7. Settings save automatically; no password is needed to lock.
+8. Click **Check server connection** to verify the address and optional token.
 
 ### 3. Lock System
 
 1. Click "LOCK SYSTEM"
-2. Pre-flight validation runs (audio, callback, monitoring, server)
+2. Pre-flight validation runs in the background (audio, callback, monitoring, and an accepted server heartbeat).
 3. If all pass, UI switches to locked mode
 4. Window stays on top, volume slider disabled
 
@@ -98,7 +151,7 @@ Client screen shows "TAMPERING" in red.
 
 ### 5. Unlock
 
-Player enters admin password to unlock after the match.
+Enter the built-in admin password `pink123` to unlock after the match.
 
 ---
 

@@ -1,5 +1,5 @@
 """
-Pink Noise Anti-Cheat Server - TOURNAMENT EDITION v2.1
+Pink Noise Anti-Cheat Server - TOURNAMENT EDITION v2.2
 Real-time monitoring dashboard with auth and XSS protection.
 """
 from fastapi import FastAPI, HTTPException, Request
@@ -23,7 +23,7 @@ AUTH_TOKEN = os.environ.get("ANTICHEAT_AUTH_TOKEN", "")
 HEARTBEAT_TIMEOUT_SECONDS = 5  # a bit of slack for players connecting over the internet
 STALE_CLIENT_HOURS = 4  # Remove clients not seen for this long
 
-app = FastAPI(title="Pink Noise Anti-Cheat Server v2.1")
+app = FastAPI(title="Pink Noise Anti-Cheat Server v2.2")
 
 # CORS — allow dashboard from any origin on the LAN
 app.add_middleware(
@@ -224,7 +224,7 @@ async def dashboard():
 # ============================================================
 def main():
     print("=" * 60)
-    print("Pink Noise Anti-Cheat Server v2.1")
+    print("Pink Noise Anti-Cheat Server v2.2")
     print("=" * 60)
     print(f"\nDashboard: http://localhost:8000")
     print(f"API docs:  http://localhost:8000/docs")

@@ -1,4 +1,4 @@
-# Quick Setup Guide - Pink Noise Anti-Cheat v2.1
+# Quick Setup Guide - PinkTourn v2.2
 
 ## For Tournament Admins
 
@@ -26,7 +26,8 @@ $env:ANTICHEAT_AUTH_TOKEN="my-secret-token"
 python server.py
 ```
 
-If you set a token, players must enter the same token in the client's "Auth Token" field.
+If you set a token, players check **Server requires a token** and enter the same value.
+Otherwise leave it unchecked. Use **Check server connection** before locking.
 
 ### 2. Client Distribution (Player Machines)
 
@@ -59,6 +60,11 @@ Distribute: `dist/client.exe` (players just run it, no Python needed).
 
 A log file `anticheat.log` is created next to the EXE for troubleshooting.
 
+Client settings are saved automatically at `%LOCALAPPDATA%\PinkTourn\settings.json`.
+The same Windows user can restart or replace the EXE without re-entering the link,
+token, selected output, or volume. A restart while locked requires admin unlock
+with `pink123`, then locking again. It reports an interrupted session to the dashboard.
+
 ### 3. Pre-Tournament Checklist
 
 **Server:**
@@ -73,7 +79,7 @@ A log file `anticheat.log` is created next to the EXE for troubleshooting.
 - "Run Diagnostic" shows green
 - Server URL set to http://<server-ip>:8000
 - Auth token entered (if server requires it)
-- Admin password set
+- Settings saved (server URL, token, output, volume)
 
 ### 4. Lock Procedure (Before Each Match)
 
@@ -98,7 +104,7 @@ Watch the dashboard:
 
 ### 6. After Match
 
-Player enters admin password and clicks Unlock.
+Click Unlock and enter **`pink123`**. No password is required to lock.
 
 ---
 
