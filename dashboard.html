@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pink Noise Anti-Cheat Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            color: #e0e0e0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+        }
+        .header h1 {
+            font-size: 2.2em;
+            color: #4fc3f7;
+            text-shadow: 0 0 10px rgba(79,195,247,0.3);
+        }
+        .header .sub { font-size: 0.95em; color: #b0b0b0; margin-top: 6px; }
+
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+        .stat {
+            background: rgba(255,255,255,0.08);
+            padding: 18px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .stat .num { font-size: 2.8em; font-weight: bold; margin: 6px 0; }
+        .stat .lbl { font-size: 0.85em; color: #b0b0b0; text-transform: uppercase; letter-spacing: 1px; }
+        .stat.ok .num   { color: #4caf50; }
+        .stat.bad .num  { color: #f44336; }
+        .stat.off .num  { color: #9e9e9e; }
+        .stat.all .num  { color: #4fc3f7; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.08);
+            border-radius: 10px;
+            padding: 20px;
+            border: 2px solid;
+            transition: box-shadow 0.2s;
+        }
+        .card.ok      { border-color: #4caf50; background: rgba(76,175,80,0.05); }
+        .card.tampered { border-color: #f44336; background: rgba(244,67,54,0.1); animation: pulse 2s infinite; }
+        .card.offline  { border-color: #9e9e9e; background: rgba(158,158,158,0.05); opacity: 0.7; }
+
+        @keyframes pulse {
+            0%,100% { box-shadow: 0 0 0 0 rgba(244,67,54,0.7); }
+            50%     { box-shadow: 0 0 20px 10px rgba(244,67,54,0); }
+        }
+
+        .card-head {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 14px; padding-bottom: 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .card-id { font-size: 1.15em; font-weight: bold; font-family: 'Courier New', monospace; }
+
+        .badge {
+            padding: 4px 14px; border-radius: 20px;
+            font-size: 0.8em; font-weight: bold;
+            text-transform: uppercase; letter-spacing: 1px; color: #fff;
+        }
+        .badge.ok       { background: #4caf50; }
+        .badge.tampered { background: #f44336; animation: blink 1s infinite; }
+        .badge.offline  { background: #9e9e9e; }
+
+        @keyframes blink { 0%,49%{opacity:1} 50%,100%{opacity:0.5} }
+
+        .row {
+            display: flex; justify-content: space-between;
+            padding: 7px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.92em;
+        }
+        .row .k { color: #b0b0b0; }
+        .row .v { font-weight: bold; font-family: 'Courier New', monospace; }
+        .row .v.dev { color: #4fc3f7; }
+        .row .v.time { color: #ffb74d; font-size: 0.9em; }
+
+        .flags {
+            background: rgba(244,67,54,0.2);
+            border: 1px solid #f44336;
+            border-radius: 5px;
+            padding: 14px;
+            margin-top: 14px;
+        }
+        .flags .hd { font-weight: bold; color: #f44336; margin-bottom: 8px; }
+        .flags .fl { padding: 4px 0; color: #ffcdd2; font-size: 0.88em; }
+
+        .empty {
+            text-align: center; padding: 60px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px; color: #b0b0b0; font-size: 1.15em;
+        }
+
+        .footer {
+            text-align: center; margin-top: 28px; padding: 12px;
+            background: rgba(255,255,255,0.05); border-radius: 5px;
+            font-size: 0.85em; color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Pink Noise Anti-Cheat Dashboard</h1>
+        <div class="sub">Tournament Edition v2.1 &mdash; Real-Time Monitoring</div>
+    </div>
+
+    <div class="stats-bar">
+        <div class="stat all"><div class="lbl">Total</div><div class="num" id="s-total">-</div></div>
+        <div class="stat ok"><div class="lbl">OK</div><div class="num" id="s-ok">-</div></div>
+        <div class="stat bad"><div class="lbl">Tampered</div><div class="num" id="s-tampered">-</div></div>
+        <div class="stat off"><div class="lbl">Offline</div><div class="num" id="s-offline">-</div></div>
+    </div>
+
+    <div class="grid" id="grid"></div>
+
+    <div class="footer">
+        Last update: <span id="clock">-</span> &nbsp;|&nbsp; Refresh: 500ms
+    </div>
+
+    <script>
+        // ---- helpers ----
+        function esc(s) {
+            // Belt-and-suspenders XSS escape (server already escapes, but be safe)
+            const d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
+
+        function ago(iso) {
+            const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+            if (s < 1) return 'just now';
+            if (s < 60) return s + 's ago';
+            if (s < 3600) return Math.floor(s/60) + 'm ago';
+            return Math.floor(s/3600) + 'h ago';
+        }
+
+        function flagLabel(f) {
+            return f.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        }
+
+        function statusOf(c) {
+            if (!c.is_online) return 'offline';
+            if (c.is_tampered) return 'tampered';
+            return 'ok';
+        }
+
+        // ---- rendering ----
+        function renderCard(c) {
+            const st = statusOf(c);
+            const activeFlags = Object.entries(c.tamper_flags).filter(([,v]) => v).map(([k]) => k);
+
+            let flagsHtml = '';
+            if (activeFlags.length) {
+                flagsHtml = `<div class="flags">
+                    <div class="hd">!! Tampering Detected:</div>
+                    ${activeFlags.map(f => `<div class="fl">* ${esc(flagLabel(f))}</div>`).join('')}
+                </div>`;
+            }
+
+            return `<div class="card ${st}" data-id="${esc(c.machine_id)}">
+                <div class="card-head">
+                    <div class="card-id">${esc(c.machine_id)}</div>
+                    <div class="badge ${st}">${st.toUpperCase()}</div>
+                </div>
+                <div class="row"><span class="k">Device</span><span class="v dev">${esc(c.device_name || 'N/A')}</span></div>
+                <div class="row"><span class="k">Volume</span><span class="v">${c.volume}%</span></div>
+                <div class="row"><span class="k">Playing</span><span class="v">${c.is_playing ? 'YES' : 'NO'}</span></div>
+                <div class="row"><span class="k">Last Seen</span><span class="v time" data-time="${c.last_seen}">${ago(c.last_seen)}</span></div>
+                <div class="row"><span class="k">Connected</span><span class="v time" data-time="${c.first_seen}">${ago(c.first_seen)}</span></div>
+                ${flagsHtml}
+            </div>`;
+        }
+
+        // Track previous state to avoid unnecessary DOM rebuilds
+        let prevHash = '';
+
+        async function refresh() {
+            try {
+                const resp = await fetch('/api/states');
+                const data = await resp.json();
+                const clients = data.clients;
+                const stats = data.stats;
+
+                // Update stat numbers (always cheap)
+                document.getElementById('s-total').textContent = stats.total;
+                document.getElementById('s-ok').textContent = stats.ok;
+                document.getElementById('s-tampered').textContent = stats.tampered;
+                document.getElementById('s-offline').textContent = stats.offline;
+
+                // Sort: tampered first, then online, then offline
+                clients.sort((a, b) => {
+                    if (a.is_tampered !== b.is_tampered) return b.is_tampered - a.is_tampered;
+                    if (a.is_online !== b.is_online) return b.is_online - a.is_online;
+                    return 0;
+                });
+
+                // Build a hash of the data to detect changes (avoids DOM thrash)
+                const hash = JSON.stringify(clients.map(c => [
+                    c.machine_id, statusOf(c), c.volume, c.is_playing,
+                    Object.entries(c.tamper_flags).filter(([,v])=>v).map(([k])=>k).join(',')
+                ]));
+
+                const grid = document.getElementById('grid');
+
+                if (clients.length === 0) {
+                    if (prevHash !== '__empty__') {
+                        grid.innerHTML = '<div class="empty">No clients connected. Waiting...</div>';
+                        prevHash = '__empty__';
+                    }
+                } else if (hash !== prevHash) {
+                    // Structural change — full rebuild
+                    grid.innerHTML = clients.map(renderCard).join('');
+                    prevHash = hash;
+                } else {
+                    // No structural change — just update time-ago labels in place
+                    grid.querySelectorAll('[data-time]').forEach(el => {
+                        el.textContent = ago(el.getAttribute('data-time'));
+                    });
+                }
+
+                document.getElementById('clock').textContent = new Date().toLocaleTimeString();
+
+            } catch (e) {
+                console.error('Dashboard refresh error:', e);
+            }
+        }
+
+        // Also update time-ago labels between full refreshes
+        setInterval(() => {
+            document.querySelectorAll('[data-time]').forEach(el => {
+                el.textContent = ago(el.getAttribute('data-time'));
+            });
+        }, 1000);
+
+        refresh();
+        setInterval(refresh, 500);
+    </script>
+</body>
+</html>
